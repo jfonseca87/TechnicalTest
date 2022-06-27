@@ -1,0 +1,142 @@
+create table Kids (
+Id  Int Identity (1,1)
+,[First Name] varchar(100)
+,[Last Name]  varchar(100)
+,[Birth Date]  datetime
+)
+
+create table Toys (
+Id  Int Identity (1,1)
+,[Kid Id]  Int
+,[Name] varchar(100)
+,[Colour]  varchar(100)
+)
+
+delete from Kids
+delete from Toys
+
+INSERT INTO Kids ([First Name],[Last Name],[Birth Date])
+Values
+('Sam','Small',DATEADD(Month,- floor(rand() * 120),GetDate()))
+,('Annie',null,'20180527')
+,('Dave','Drei','20140325')
+,('Ivan','Ivanov','20150517')
+,('Brenda','Simon','20160315')
+,('Samantha','Fox','20190715')
+,('Diana','Ros','20160918')
+,('Michael','Buble','20190410')
+,('Bilbo','Baggins','20200125')
+,('Rox','Mirers','20130411')
+,('Frodo','Baggins','20150313')
+,('Riana','Wober','20161115')
+,('Marta',null,'20121230')
+
+INSERT INTO Toys ([Kid Id],[Name],[Colour])
+Values
+('1','car','blue')
+,('1','ball','red')
+,('1','doll','blue')
+,('2','truck','green')
+,('2','car','red')
+,('2','ball','green')
+,('2','doll','blue')
+,('3','car','green')
+,('4','doll','red')
+,('4','ball','blue')
+,('5','ball','green')
+,('6','truck','blue')
+,('6','truck','red')
+,('7','car','green')
+,('2','car','green')
+,('1','ball','blue')
+,('1','car','red')
+,('8','ball',null)
+
+/*
+
+- Select full name (in one cell), Birth Date of all kids 3 years old and above
+expected column list: Full Name( ex. "Sam Small"), Birth Date (ex. "2021-08-18" )
+Answer => 
+	select [First Name] +' '+ ISNULL([Last Name], '') FullName, [Birth Date] BirthDate
+	from Kids
+	where Year([Birth Date]) <= (year(GETDATE()) - 3) 
+	order by [Birth Date] desc
+
+- Select all kids who have more than 2 blue toys
+expected column list: Full Name( ex. "Sam Small"), Number of Blue Toys
+Answer => 
+	select k.[First Name] +' '+ ISNULL(k.[Last Name], '') Name, dq.Toys
+	from Kids k
+	inner join 
+	(
+		select [kid id] KidId, count(Id) Toys
+		from Toys t 
+		where Colour = 'blue'
+		group by [Kid Id]
+		having count(id) >= 3
+	) dq
+	on dq.KidId = k.id
+
+
+- Select all kids under 5 years of age who have more than 1 toy
+expected column list: Full Name( ex. "Sam Small"), Birth Date  (ex. "2021-08-18" ), Number of Toys
+Answer => 
+	select k.[First Name] +' '+ ISNULL(k.[Last Name], '') Name, k.[Birth Date], dq.Toys
+	from Kids k
+	inner join 
+	(
+		select [kid id] KidId, count(Id) Toys
+		from Toys t 
+		group by [Kid Id]
+		having count(id) >= 1
+	) dq
+	on dq.KidId = k.id
+	where Year(k.[Birth Date]) > (year(GETDATE()) - 5) 
+
+- Select all kids with no toys at all
+expected column list: Full Name( ex. "Sam Small")
+Answer => 
+	select k.[First Name] +' '+ ISNULL(k.[Last Name], '') Name
+	from Kids k
+	where k.Id not in (select [kid id] from toys)
+
+- Select all kids having birthday in April
+expected column list: Full Name( ex. "Sam Small"), Birth Date  (ex. "2021-08-18" )
+Answer => 
+	select k.[First Name] +' '+ ISNULL(k.[Last Name], '') Name, [Birth Date] 
+	from Kids k
+	where Month([Birth Date]) = 4
+
+- Select all the kids with the highest number of toys (if more than one show all of them)
+expected column list: Kid id, Full Name( ex. "Sam Small"), Number of toys
+Answer => 
+	select Id, k.[First Name] +' '+ ISNULL(k.[Last Name], '') Name, dq.toys
+	from Kids k 
+	inner join (
+				select [Kid Id] KidId, count(Id) toys
+				from Toys t 
+				group by [kid id]
+				having count(Id) = (
+								SELECT MAX (MaxToys) 
+								FROM (SELECT [kid id], COUNT(Id) MaxToys 
+									  FROM Toys t 
+									  GROUP BY [kid id]) temp				
+								)
+			   ) dq
+	on dq.KidId = k.Id
+
+
+- Select all kids ordered by toy count if two kids has same number of toys their names should be in one cell separated by comma
+we need just an idea how this could be achieved (don't spent much time on this will be discussed)
+Answer => 
+	select k.[First Name] +' '+ ISNULL(k.[Last Name], '')
+		from Kids k 
+		inner join (
+					select [Kid Id] KidId, count(Id) toys
+					from Toys t 
+					group by [kid id]
+				   ) dq
+	on dq.KidId = k.Id
+	
+	In my opinion the best way to solve that is on backend, not in SQL Engine
+*/
